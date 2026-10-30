@@ -1,0 +1,131 @@
+import io
+import os
+
+import torch
+from torch import nn
+from torchvision import models, transforms
+from PIL import Image
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+
+# Configuration
+MODEL_PATH = os.path.join(
+    os.path.dirname(__file__),
+    "best_model.pth"
+)
+
+THRESHOLD = 0.15
+DEVICE = torch.device("cpu")
+
+
+# Create FastAPI application
+app = FastAPI(title="Deepfake Image Detection API")
+
+
+# Allow requests from the website
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Demo setup; restrict to your website later
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Create the same model architecture used during training
+model = models.mobilenet_v3_large(weights=None)
+
+model.classifier[3] = nn.Linear(
+    model.classifier[3].in_features,
+    1
+)
+
+
+# Load trained weights
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError(
+        f"Model file not found: {MODEL_PATH}"
+    )
+
+state_dict = torch.load(
+    MODEL_PATH,
+    map_location=DEVICE,
+    weights_only=True
+)
+
+model.load_state_dict(state_dict)
+model.to(DEVICE)
+model.eval()
+
+
+# Match the image preprocessing used for prediction
+preprocess = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]
+    )
+])
+
+
+@app.get("/")
+def home():
+    return {
+        "message": "Deepfake Image Detection API is running"
+    }
+
+
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+
+    if file.content_type not in [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ]:
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a JPG, PNG, or WEBP image."
+        )
+
+    try:
+        image_bytes = await file.read()
+
+        if len(image_bytes) > 10 * 1024 * 1024:
+            raise HTTPException(
+                status_code=413,
+                detail="Image must be smaller than 10 MB."
+            )
+
+        image = Image.open(
+            io.BytesIO(image_bytes)
+        ).convert("RGB")
+
+        input_tensor = preprocess(image).unsqueeze(0)
+
+        with torch.inference_mode():
+            logits = model(input_tensor)
+            fake_probability = torch.sigmoid(logits).item()
+
+        prediction = (
+            "FAKE"
+            if fake_probability >= THRESHOLD
+            else "REAL"
+        )
+
+        return {
+            "prediction": prediction,
+            "fake_probability": round(fake_probability, 4),
+            "threshold": THRESHOLD
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not process this image. Please try another."
+        )
