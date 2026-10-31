@@ -1,6 +1,0 @@
-
-fastapi
-python-multipart
-Pillow
-torch==2.5.1
-torchvision==0.20.1
