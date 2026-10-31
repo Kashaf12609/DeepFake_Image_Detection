@@ -3,92 +3,598 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Deepfake Image Detection</title>
+
 <style>
-:root{--blue:#1769e8;--navy:#10254b;--muted:#61728e;--line:#dce9fb;--pale:#f3f8ff}
-*{box-sizing:border-box}
-body{margin:0;font-family:Inter,"Segoe UI",Arial,sans-serif;color:var(--navy);background:linear-gradient(180deg,#fff 0%,#f7faff 100%);min-height:100vh}
-header{height:72px;border-bottom:1px solid #e9f0fb;background:#ffffffed;display:flex;align-items:center}
-.wrap{width:min(980px,calc(100% - 32px));margin:auto}
-.brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:19px;letter-spacing:-.4px}
-.logo{width:37px;height:37px;border-radius:12px;background:linear-gradient(145deg,#398bff,#1558d7);display:grid;place-items:center;color:#fff;font-size:20px;box-shadow:0 6px 16px #1769e82c}
-main{padding:58px 0 48px;position:relative;overflow:hidden}
-main:before,main:after{content:"";position:absolute;z-index:-1;width:420px;height:280px;border-radius:50%;background:#e9f2ff;filter:blur(2px);opacity:.65}
-main:before{top:85px;left:-300px}main:after{top:120px;right:-310px}
-.intro{text-align:center;max-width:690px;margin:0 auto 32px}
-.badge{display:inline-flex;align-items:center;gap:8px;border:1px solid #d6e6ff;border-radius:99px;padding:7px 12px;background:#fff;color:#2468ce;font-size:12px;font-weight:800;letter-spacing:1px}
-.badge span{width:7px;height:7px;background:#22b98b;border-radius:50%}
-h1{font-size:clamp(34px,5vw,54px);line-height:1.1;letter-spacing:-1.8px;margin:18px 0 14px}
-h1 em{font-style:normal;color:var(--blue)}
-.intro p{font-size:17px;line-height:1.7;color:var(--muted);margin:0 auto;max-width:610px}
-.card{max-width:790px;margin:0 auto 24px;background:#fff;border:1px solid #e3edfb;border-radius:22px;padding:22px;box-shadow:0 18px 55px #274f8310}
-.drop{min-height:230px;border:2px dashed #b9d5ff;border-radius:16px;background:#fbfdff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;cursor:pointer;transition:.2s}
-.drop:hover,.drop.drag{border-color:var(--blue);background:#f2f7ff}
-.upload-icon{width:58px;height:58px;border-radius:18px;background:#eaf3ff;color:var(--blue);display:grid;place-items:center;font-size:29px;margin-bottom:14px}
-.drop strong{font-size:18px;margin-bottom:8px}
-.drop small{color:#7a8aa2;font-size:13px}
-input[type=file]{display:none}
-.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:17px}
-button{border:0;border-radius:12px;padding:13px 23px;font-weight:750;font-size:14px;cursor:pointer}
-.primary{background:linear-gradient(135deg,#287eff,#145bdb);color:#fff;box-shadow:0 8px 20px #1769e82b}
-.secondary{background:#fff;border:1px solid var(--line);color:#39516f}
-button:disabled{opacity:.5;cursor:not-allowed}
-#previewArea{display:none;margin-top:18px;text-align:center}
-#preview{max-width:100%;max-height:280px;border-radius:12px;border:1px solid var(--line);object-fit:contain}
-.filename{color:var(--muted);font-size:13px;margin-top:8px;overflow-wrap:anywhere}
-.result{max-width:790px;margin:0 auto;background:linear-gradient(135deg,#f2f7ff,#fff);border:1px solid #e1edff;border-radius:20px;padding:23px 26px;display:flex;align-items:center;gap:15px}
-.result-icon{width:43px;height:43px;flex:0 0 43px;border-radius:14px;background:#e3efff;color:var(--blue);display:grid;place-items:center;font-size:21px}
-.result h2{font-size:17px;margin:0 0 6px}
-.result p{font-size:13px;line-height:1.6;color:var(--muted);margin:0}
-.notice{max-width:790px;margin:12px auto 0;color:#8491a4;font-size:11px;line-height:1.6;text-align:center;padding:0 10px}
-footer{border-top:1px solid #e9f0fb;padding:22px 0;color:#7b8ba4;text-align:center;font-size:12px;background:#fff}
-@media(max-width:600px){main{padding:42px 0 35px}.card{padding:13px}.drop{min-height:205px}.result{padding:18px}.intro p{font-size:15px}}
+:root {
+    --blue: #1769e8;
+    --navy: #10254b;
+    --muted: #61728e;
+    --line: #dce9fb;
+    --pale: #f3f8ff;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: var(--navy);
+    background: linear-gradient(180deg, #fff 0%, #f7faff 100%);
+    min-height: 100vh;
+}
+
+header {
+    min-height: 72px;
+    border-bottom: 1px solid #e9f0fb;
+    background: #ffffffed;
+    display: flex;
+    align-items: center;
+}
+
+.wrap {
+    width: min(980px, calc(100% - 32px));
+    margin: auto;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    font-weight: 800;
+    font-size: 19px;
+}
+
+.logo {
+    width: 37px;
+    height: 37px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #398bff, #1558d7);
+    display: grid;
+    place-items: center;
+    color: white;
+    font-size: 20px;
+}
+
+main {
+    padding: 58px 0 48px;
+}
+
+.intro {
+    text-align: center;
+    max-width: 690px;
+    margin: 0 auto 32px;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #d6e6ff;
+    border-radius: 99px;
+    padding: 7px 12px;
+    background: white;
+    color: #2468ce;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.badge span {
+    width: 7px;
+    height: 7px;
+    background: #22b98b;
+    border-radius: 50%;
+}
+
+h1 {
+    font-size: clamp(34px, 5vw, 54px);
+    line-height: 1.1;
+    margin: 18px 0 14px;
+}
+
+h1 em {
+    font-style: normal;
+    color: var(--blue);
+}
+
+.intro p {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--muted);
+}
+
+.card {
+    max-width: 790px;
+    margin: 0 auto 24px;
+    background: white;
+    border: 1px solid #e3edfb;
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 18px 55px #274f8310;
+}
+
+.drop {
+    min-height: 230px;
+    border: 2px dashed #b9d5ff;
+    border-radius: 16px;
+    background: #fbfdff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.drop:hover,
+.drop.drag {
+    border-color: var(--blue);
+    background: #f2f7ff;
+}
+
+.upload-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: #eaf3ff;
+    color: var(--blue);
+    display: grid;
+    place-items: center;
+    font-size: 29px;
+    margin-bottom: 14px;
+}
+
+.drop strong {
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.drop small {
+    color: #7a8aa2;
+    font-size: 13px;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+#previewArea {
+    display: none;
+    margin-top: 18px;
+    text-align: center;
+}
+
+#preview {
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    object-fit: contain;
+}
+
+.filename {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 8px;
+    overflow-wrap: anywhere;
+}
+
+.actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 17px;
+}
+
+button {
+    border: 0;
+    border-radius: 12px;
+    padding: 13px 23px;
+    font-weight: 750;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.primary {
+    background: linear-gradient(135deg, #287eff, #145bdb);
+    color: white;
+    box-shadow: 0 8px 20px #1769e82b;
+}
+
+.secondary {
+    background: white;
+    border: 1px solid var(--line);
+    color: #39516f;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.result {
+    max-width: 790px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #f2f7ff, white);
+    border: 1px solid #e1edff;
+    border-radius: 20px;
+    padding: 23px 26px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.result-icon {
+    width: 43px;
+    height: 43px;
+    flex: 0 0 43px;
+    border-radius: 14px;
+    background: #e3efff;
+    color: var(--blue);
+    display: grid;
+    place-items: center;
+    font-size: 21px;
+}
+
+.result h2 {
+    font-size: 17px;
+    margin: 0 0 8px;
+}
+
+.result p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--muted);
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.notice {
+    max-width: 790px;
+    margin: 12px auto 0;
+    color: #8491a4;
+    font-size: 11px;
+    line-height: 1.6;
+    text-align: center;
+    padding: 0 10px;
+}
+
+footer {
+    border-top: 1px solid #e9f0fb;
+    padding: 22px 0;
+    color: #7b8ba4;
+    text-align: center;
+    font-size: 12px;
+    background: white;
+}
+
+@media (max-width: 600px) {
+    main {
+        padding: 42px 0 35px;
+    }
+
+    .card {
+        padding: 13px;
+    }
+
+    .drop {
+        min-height: 205px;
+    }
+
+    .result {
+        padding: 18px;
+    }
+
+    .intro p {
+        font-size: 15px;
+    }
+}
 </style>
 </head>
+
 <body>
-<header><div class="wrap"><div class="brand"><div class="logo">◈</div><span>Deepfake Image Detection</span></div></div></header>
+
+<header>
+    <div class="wrap">
+        <div class="brand">
+            <div class="logo">◈</div>
+            <span>Deepfake Image Detection</span>
+        </div>
+    </div>
+</header>
+
 <main>
 <div class="wrap">
-<section class="intro">
-<div class="badge"><span></span> AI-POWERED IMAGE ANALYSIS</div>
-<h1>Deepfake <em>Image Detection</em></h1>
-<p>Upload an image to analyze whether it may be real or manipulated. This project uses deep learning and a MobileNetV3 image-classification model to support image authenticity research.</p>
-</section>
-<section class="card">
-<label class="drop" id="drop" for="fileInput">
-<div class="upload-icon">⇧</div><strong>Choose an image or drag it here</strong><small>Supported formats: JPG, JPEG, PNG, WEBP · Max 10 MB</small>
-<input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp">
-<div id="previewArea"><img id="preview" alt="Selected image preview"><div class="filename" id="filename"></div></div>
-</label>
-<div class="actions"><button class="primary" id="uploadBtn" type="button">Upload Image</button><button class="secondary" id="clearBtn" type="button">Clear</button></div>
-</section>
-<section class="result" aria-live="polite">
-<div class="result-icon">✦</div><div><h2 id="resultTitle">Prediction Result</h2><p id="resultText">Select an image to get started. The live prediction service needs to be connected to return a genuine REAL or FAKE result.</p></div>
-</section>
-<p class="notice">For academic research only. Model predictions can be incorrect and should not be treated as definitive proof of image authenticity.</p>
+
+    <section class="intro">
+        <div class="badge">
+            <span></span>
+            AI-POWERED IMAGE ANALYSIS
+        </div>
+
+        <h1>Deepfake <em>Image Detection</em></h1>
+
+        <p>
+            Upload an image to analyze whether it may be real or manipulated.
+            This project uses deep learning and a MobileNetV3 image-classification
+            model to support image authenticity research.
+        </p>
+    </section>
+
+    <section class="card">
+
+        <label class="drop" id="drop" for="fileInput">
+
+            <div class="upload-icon">⇧</div>
+
+            <strong>Choose an image or drag it here</strong>
+
+            <small>
+                Supported formats: JPG, JPEG, PNG, WEBP · Max 10 MB
+            </small>
+
+            <input
+                id="fileInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+            >
+
+            <div id="previewArea">
+                <img id="preview" alt="Selected image preview">
+                <div class="filename" id="filename"></div>
+            </div>
+
+        </label>
+
+        <div class="actions">
+            <button class="primary" id="uploadBtn" type="button">
+                Upload Image
+            </button>
+
+            <button class="secondary" id="clearBtn" type="button">
+                Clear
+            </button>
+        </div>
+
+    </section>
+
+    <section class="result" aria-live="polite">
+
+        <div class="result-icon">✦</div>
+
+        <div>
+            <h2 id="resultTitle">Prediction Result</h2>
+
+            <p id="resultText">
+                Select an image and click Upload Image to start detection.
+            </p>
+        </div>
+
+    </section>
+
+    <p class="notice">
+        For academic research only. Model predictions can be incorrect
+        and should not be treated as definitive proof of image authenticity.
+    </p>
+
 </div>
 </main>
-<footer>© 2026 Deepfake Image Detection · Academic AI Project</footer>
-<script>
-const input=document.getElementById('fileInput'), drop=document.getElementById('drop');
-const previewArea=document.getElementById('previewArea'), preview=document.getElementById('preview');
-const filename=document.getElementById('filename'), resultText=document.getElementById('resultText');
-let imageUrl=null;
-function showFile(file){
- if(!file)return;
- if(!file.type.startsWith('image/')){alert('Please choose an image file.');return}
- if(file.size>10*1024*1024){alert('Please choose an image smaller than 10 MB.');input.value='';return}
- if(imageUrl)URL.revokeObjectURL(imageUrl);
- imageUrl=URL.createObjectURL(file);preview.src=imageUrl;filename.textContent=file.name;
- previewArea.style.display='block';
- resultText.textContent='Image selected and ready. The trained MobileNetV3 model must be connected to a prediction backend before REAL/FAKE results can be shown.';
+
+<footer>
+    © 2026 Deepfake Image Detection · Academic AI Project
+</footer>
+
+<script type="module">
+import { Client, handle_file } from
+    "https://esm.sh/@gradio/client";
+
+const SPACE_ID =
+    "KashafGillani/deepfake-image-detection";
+
+const input = document.getElementById("fileInput");
+const drop = document.getElementById("drop");
+const previewArea = document.getElementById("previewArea");
+const preview = document.getElementById("preview");
+const filename = document.getElementById("filename");
+const resultTitle = document.getElementById("resultTitle");
+const resultText = document.getElementById("resultText");
+const uploadBtn = document.getElementById("uploadBtn");
+const clearBtn = document.getElementById("clearBtn");
+
+let selectedFile = null;
+let imageUrl = null;
+
+function showFile(file) {
+    if (!file) return;
+
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+        alert("Please choose a JPG, PNG, or WEBP image.");
+        return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        alert("Please choose an image smaller than 10 MB.");
+        return;
+    }
+
+    if (imageUrl) {
+        URL.revokeObjectURL(imageUrl);
+    }
+
+    selectedFile = file;
+    imageUrl = URL.createObjectURL(file);
+
+    preview.src = imageUrl;
+    filename.textContent = file.name;
+    previewArea.style.display = "block";
+
+    resultTitle.textContent = "Image Ready";
+
+    resultText.textContent =
+        "Your image is ready. Click Upload Image to run the AI model.";
 }
-input.addEventListener('change',()=>showFile(input.files[0]));
-document.getElementById('uploadBtn').addEventListener('click',()=>{if(!input.files[0])input.click();else showFile(input.files[0])});
-document.getElementById('clearBtn').addEventListener('click',()=>{input.value='';previewArea.style.display='none';preview.removeAttribute('src');filename.textContent='';if(imageUrl)URL.revokeObjectURL(imageUrl);imageUrl=null;document.getElementById('resultTitle').textContent='Prediction Result';resultText.textContent='Select an image to get started. The live prediction service needs to be connected to return a genuine REAL or FAKE result.'});
-['dragenter','dragover'].forEach(evt=>drop.addEventListener(evt,e=>{e.preventDefault();drop.classList.add('drag')}));
-['dragleave','drop'].forEach(evt=>drop.addEventListener(evt,e=>{e.preventDefault();drop.classList.remove('drag')}));
-drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f){try{input.files=e.dataTransfer.files}catch{}showFile(f)}});
+
+input.addEventListener("change", () => {
+    showFile(input.files[0]);
+});
+
+uploadBtn.addEventListener("click", async () => {
+
+    if (!selectedFile) {
+        input.click();
+        return;
+    }
+
+    uploadBtn.disabled = true;
+    clearBtn.disabled = true;
+    uploadBtn.textContent = "Analyzing...";
+
+    resultTitle.textContent = "Analyzing Image";
+
+    resultText.textContent =
+        "Connecting to the detection model. Please wait...";
+
+    try {
+
+        const client = await Client.connect(SPACE_ID);
+
+        const response = await client.predict("/predict", {
+            image: handle_file(selectedFile)
+        });
+
+        const output = response.data[0];
+
+        let data;
+
+        if (typeof output === "string") {
+            try {
+                data = JSON.parse(output);
+            } catch {
+                throw new Error("Unexpected response from the model.");
+            }
+        } else {
+            data = output;
+        }
+
+        if (!data || typeof data !== "object") {
+            throw new Error("Prediction data is unavailable.");
+        }
+
+        const prediction =
+            data.Prediction ?? data.prediction;
+
+        if (!prediction) {
+            const message = data.Error ?? data.error;
+
+            throw new Error(
+                message || "The model did not return a prediction."
+            );
+        }
+
+        let fakeProbability =
+            data["Fake Probability"] ?? data.fake_probability;
+
+        let realProbability =
+            data["Real Probability"] ?? data.real_probability;
+
+        if (typeof fakeProbability === "number") {
+            fakeProbability =
+                (fakeProbability * 100).toFixed(2) + "%";
+        }
+
+        if (typeof realProbability === "number") {
+            realProbability =
+                (realProbability * 100).toFixed(2) + "%";
+        }
+
+        resultTitle.textContent =
+            "Prediction: " + prediction;
+
+        resultText.textContent =
+            "Fake Probability: " + (fakeProbability ?? "N/A") +
+            " | Real Probability: " + (realProbability ?? "N/A");
+
+    } catch (error) {
+
+        console.error("Prediction error:", error);
+
+        resultTitle.textContent = "Prediction Failed";
+
+        resultText.textContent =
+            "Error: " + (error.message || "Unable to connect.") +
+            " Please check that the Hugging Face Space is running.";
+
+    } finally {
+
+        uploadBtn.disabled = false;
+        clearBtn.disabled = false;
+        uploadBtn.textContent = "Upload Image";
+
+    }
+});
+
+clearBtn.addEventListener("click", () => {
+
+    input.value = "";
+    selectedFile = null;
+
+    previewArea.style.display = "none";
+    preview.removeAttribute("src");
+    filename.textContent = "";
+
+    if (imageUrl) {
+        URL.revokeObjectURL(imageUrl);
+    }
+
+    imageUrl = null;
+
+    resultTitle.textContent = "Prediction Result";
+    resultText.textContent =
+        "Select an image and click Upload Image to start detection.";
+
+});
+
+["dragenter", "dragover"].forEach(eventName => {
+
+    drop.addEventListener(eventName, event => {
+        event.preventDefault();
+        drop.classList.add("drag");
+    });
+
+});
+
+["dragleave", "drop"].forEach(eventName => {
+
+    drop.addEventListener(eventName, event => {
+        event.preventDefault();
+        drop.classList.remove("drag");
+    });
+
+});
+
+drop.addEventListener("drop", event => {
+
+    const file = event.dataTransfer.files[0];
+
+    if (file) {
+        showFile(file);
+    }
+
+});
 </script>
+
 </body>
 </html>
